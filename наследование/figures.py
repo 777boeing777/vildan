@@ -34,7 +34,7 @@ class Circle(Figure):
         self.side = radius
 
     def __str__(self):
-        return 'Квадрат'
+        return 'Круг'
 
     def square(self) -> float or int:
         return self.side ** 2
