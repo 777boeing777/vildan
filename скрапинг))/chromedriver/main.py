@@ -1,27 +1,30 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-import time
+import numpy as np
+from bs4 import BeautifulSoup
+import requests
+import json
 
-url = "https://webscraper.io/test-sites/e-commerce/ajax/computers/laptops"
-driver = webdriver.Chrome(r"C:\PyCharmProjects\vildan\скрапинг))\chromedriver\chromedriver.exe")
-driver.get(url)
-data_list = []
+url = "https://webscraper.io/test-sites/e-commerce/ajax/computers/tablets"
+items_array = np.array([])
 
-try:
-    buttons = driver.find_elements(By.XPATH, "//button[@class='btn btn-default page']")
-    for page, i_button in enumerate(buttons):
-        elements = driver.find_elements(By.XPATH, "//div[@class='caption']")
-        for i_elem in elements:
-            current_elem = i_elem.text.split('\n')
-            data_list.append({'price': current_elem[0], 'description': current_elem[2]})
-        driver.execute_script("arguments[0].click();", i_button)
-        time.sleep(0.5)
-except Exception as ex:
-    print(ex)
-finally:
-    driver.close()
-    driver.quit()
+page = requests.get(url)
+soup = BeautifulSoup(page.text, 'html.parser')
+info = soup.find_all('div', class_='row ecomerce-items ecomerce-items-ajax')
+items = info[0].get('data-items')
+items = json.loads(items)
+prices_array = np.array([])
+for i_item in items:
+    items_array = np.append(items_array, {'title': i_item.get('title'),
+                                          'description': i_item.get('description'),
+                                          'price': float(i_item.get('price'))})
+    prices_array = np.append(prices_array, float(i_item.get('price')))
+average_price = prices_array.mean()
 
-for i_elem in data_list:
-    print(f'Описание товара: {i_elem.get("description")}\nЦена: {i_elem.get("price")}')
-    print()
+print(f'Максимальная цена: {prices_array.max()}')
+print(f'Минимальная цена: {prices_array.min()}')
+print(f'Средняя цена: {average_price}')
+print()
+for i_item in items_array:
+    if i_item.get('price') > average_price:
+        print(f'Цена на {i_item.get("title")} выше среднего и стоит {i_item.get("price")}')
+    else:
+        print(f'Цена на {i_item.get("title")} ниже среднего и стоит {i_item.get("price")}')
